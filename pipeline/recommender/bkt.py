@@ -1,10 +1,13 @@
 import json
 from collections import defaultdict
 import numpy as np
+import os
 
-with open("/Users/shraddhasidhan/Downloads/normalized_graph_files/problem_topic_edges_normalized.json") as f:
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+with open(os.path.join(BASE_DIR, "data", "problem_topic_edges_normalized.json")) as f:
     pt_edges = json.load(f)
-
 problem_to_topics = defaultdict(list)
 for edge in pt_edges:
     problem_to_topics[edge["source"]].append(edge["target"])

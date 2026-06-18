@@ -4,7 +4,9 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 # Load problem to topics mapping
-with open("/Users/shraddhasidhan/Downloads/normalized_graph_files/problem_topic_edges_normalized.json") as f:
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+with open(os.path.join(BASE_DIR, "data", "problem_topic_edges_normalized.json")) as f:
     pt_edges = json.load(f)
 
 problem_to_topics = defaultdict(list)
@@ -24,7 +26,7 @@ def seed_half_life_from_cf(cf_submissions, problem_to_topics):
     topic_stats = defaultdict(lambda: {"solved": 0, "attempted": 0, "last_seen": None})
 
     for sub in cf_submissions:
-        problem_id = sub.get("problem_id")
+        problem_id = sub.get("problemId") or sub.get("problem_id")
         topics = problem_to_topics.get(problem_id, [])
         for topic in topics:
             topic_stats[topic]["attempted"] += 1
@@ -84,10 +86,7 @@ def update_half_life(current_half_life, performance, days_since_review):
     new_half_life = max(MIN_HALF_LIFE, min(MAX_HALF_LIFE, new_half_life))
     return round(new_half_life, 3)
 
-# =============================================================================
-# URGENCY SCORE FOR RANKING
-# urgency = 1 - p(recall)
-# =============================================================================
+
 def calculate_urgency(hlr_state, current_timestamp):
     """
     Calculate urgency score for ranking engine.
@@ -100,7 +99,7 @@ def calculate_urgency(hlr_state, current_timestamp):
     if last_review is None:
         return 0.5
 
-    last_review_dt = datetime.fromisoformat(last_review)
+    last_review_dt = datetime.fromisoformat(last_review).replace(tzinfo=timezone.utc) if datetime.fromisoformat(last_review).tzinfo is None else datetime.fromisoformat(last_review)
     now_dt = datetime.fromtimestamp(current_timestamp, tz=timezone.utc)
     days_since = (now_dt - last_review_dt).total_seconds() / 86400
 
@@ -150,6 +149,8 @@ def process_hlr(submission, user_hlr_state):
 
         if last_review:
             last_review_dt = datetime.fromisoformat(last_review)
+            if last_review_dt.tzinfo is None:
+               last_review_dt = last_review_dt.replace(tzinfo=timezone.utc)
             days_since = (now_dt - last_review_dt).total_seconds() / 86400
         else:
             days_since = 0

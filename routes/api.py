@@ -1,46 +1,17 @@
-from fastapi import FastAPI
+import os
+from fastapi import APIRouter
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, Range
 from sentence_transformers import SentenceTransformer
-from bkt import process_submission, problem_to_topics
+from pipeline.recommender.bkt import process_submission
 from pydantic import BaseModel
-from typing import Optional
-app = FastAPI()
-client = QdrantClient(path="/Users/shraddhasidhan/rag-from-scratch/LANG /qdrant_storage")
+
+router = APIRouter()
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+client = QdrantClient(path=os.path.join(BASE_DIR, "qdrant_storage_v2"))
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-@app.get("/candidates")
-def get_candidates(topic: str, min_difficulty: int = 1, max_difficulty: int = 3, limit: int = 10):
-    query_vector = model.encode(topic).tolist()
-
-    results = client.query_points(
-        collection_name="problems",
-        query=query_vector,
-        limit=limit,
-        query_filter=Filter(
-            must=[
-                FieldCondition(
-                    key="difficulty_score",
-                    range=Range(gte=min_difficulty, lte=max_difficulty)
-                )
-            ]
-        )
-    ).points
-
-    return [
-        {
-            "question": r.payload["question"],
-            "difficulty": r.payload["difficulty"],
-            "tags": r.payload["tags"],
-            "skill_types": r.payload["skill_types"],
-            "source": r.payload["source"],
-            "url": r.payload["url"],
-            "score": r.score
-        }
-        for r in results
-    ]
-
-# In memory mastery store — replace with database later
 user_mastery_store = {}
 
 class Submission(BaseModel):
@@ -54,22 +25,42 @@ class Submission(BaseModel):
     normalisedScore: float
     timestamp: float
 
-@app.post("/update_bkt")
+@router.get("/candidates")
+def get_candidates(topic: str, min_difficulty: int = 1, max_difficulty: int = 3, limit: int = 10):
+    query_vector = model.encode(topic).tolist()
+    results = client.query_points(
+        collection_name="problems_v2",
+        query=query_vector,
+        limit=limit,
+        query_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="difficulty_score",
+                    range=Range(gte=min_difficulty, lte=max_difficulty)
+                )
+            ]
+        )
+    ).points
+    return [
+        {
+            "title_slug": r.payload["title_slug"],
+            "title": r.payload["title"],
+            "description": r.payload["description"],
+            "topics": r.payload["topics"],
+            "difficulty_score": r.payload["difficulty_score"],
+            "score": r.score
+        }
+        for r in results
+    ]
+
+@router.post("/update_bkt")
 def update_bkt_endpoint(submission: Submission):
-    
-    # Get current mastery for this user
     current_mastery = user_mastery_store.get(submission.userId, {})
-    
-    # Process submission
     updated_mastery, mastered_topics, results = process_submission(
         submission.dict(),
         current_mastery
     )
-
-    
-    # Save updated mastery
     user_mastery_store[submission.userId] = updated_mastery
-    
     return {
         "userId": submission.userId,
         "problemId": submission.problemId,
@@ -78,7 +69,7 @@ def update_bkt_endpoint(submission: Submission):
         "updated_mastery": updated_mastery
     }
 
-@app.get("/mastery/{user_id}")
+@router.get("/mastery/{user_id}")
 def get_mastery(user_id: str):
     mastery = user_mastery_store.get(user_id, {})
     return {
