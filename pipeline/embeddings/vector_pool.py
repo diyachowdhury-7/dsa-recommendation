@@ -29,13 +29,15 @@ problems = []
 for p in problem_nodes:
     slug = p["title_slug"]
     topics = problem_topics.get(slug, [])
+    # When building each problem dict
     problem = {
-        "title_slug": slug,
-        "title": p["title"],
-        "description": p["description"],
-        "topics": topics,
-        "sample_test_cases": p.get("sample_test_cases", [])
-    }
+    "title_slug": slug,
+    "title": p["title"],
+    "description": p["description"],
+    "topics": topics,
+    "difficulty_score": p.get("difficulty_score", 0),  # now reads from JSON
+    "sample_test_cases": p.get("sample_test_cases", [])
+}
     problems.append(problem)
 
 print(f"Loaded {len(problems)} problems with topics")
@@ -54,10 +56,15 @@ for i, problem in enumerate(problems):
 
 client = QdrantClient(path="./qdrant_storage_v2")
 
+existing = [c.name for c in client.get_collections().collections]
+if "problems_v2" in existing:
+    client.delete_collection("problems_v2")
+
 client.create_collection(
     collection_name="problems_v2",
     vectors_config=VectorParams(size=384, distance=Distance.COSINE)
 )
+
 points = []
 for i, problem in enumerate(problems):
     points.append(
@@ -65,12 +72,12 @@ for i, problem in enumerate(problems):
             id=i,
             vector=problem["embedding"],
             payload={
-                "title_slug": problem["title_slug"],
-                "title": problem["title"],
-                "description": problem["description"][:300],
-                "topics": problem["topics"],
-                "difficulty_score": 0,  # to be updated when difficulty is added
-            }
+    "title_slug": problem["title_slug"],
+    "title": problem["title"],
+    "description": problem["description"][:300],
+    "topics": problem["topics"],
+    "difficulty_score": problem["difficulty_score"],  # will be 0 until preprocessing adds it
+}
         )
     )
 
