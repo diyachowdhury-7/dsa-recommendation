@@ -4,16 +4,16 @@ from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance, Filter, FieldCondition, Range
 
-with open("problem_nodes_normalized.json") as f:
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+with open(os.path.join(BASE_DIR, "data", "problem_nodes_normalized.json")) as f:
     problem_nodes = json.load(f)
-
-with open("problem_topic_edges_normalized.json") as f:
+with open(os.path.join(BASE_DIR, "data", "problem_topic_edges_normalized.json")) as f:
     pt_edges = json.load(f)
-
-with open("topic_nodes_normalized.json") as f:
+with open(os.path.join(BASE_DIR, "data", "topic_nodes_normalized.json")) as f:
     topic_nodes = json.load(f)
-
-with open("topic_topic_edges_normalized.json", encoding="utf-8-sig") as f:
+with open(os.path.join(BASE_DIR, "data", "topic_topic_edges_normalized.json"), encoding="utf-8-sig") as f:
     tt_edges = json.load(f)
 
 print(f"Problems: {len(problem_nodes)}")
