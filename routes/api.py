@@ -5,6 +5,8 @@ from qdrant_client.models import Filter, FieldCondition, Range
 from sentence_transformers import SentenceTransformer
 from pipeline.recommender.bkt import process_submission
 from pydantic import BaseModel
+from pipeline.recommender.hlr import process_hlr, calculate_urgency
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -77,3 +79,42 @@ def get_mastery(user_id: str):
         "mastery": mastery,
         "mastered_topics": [t for t, v in mastery.items() if v >= 0.75]
     }
+
+
+# In memory HLR store — replace with database later
+user_hlr_store = {}
+
+@router.post("/update_hlr")
+def update_hlr_endpoint(submission: Submission):
+    current_hlr = user_hlr_store.get(submission.userId, {})
+    
+    updated_hlr, results = process_hlr(
+        submission.dict(),
+        current_hlr
+    )
+    
+    user_hlr_store[submission.userId] = updated_hlr
+    
+    return {
+        "userId": submission.userId,
+        "problemId": submission.problemId,
+        "results": results,
+        "updated_hlr": updated_hlr
+    }
+
+@router.get("/urgency/{user_id}")
+def get_urgency(user_id: str):
+    hlr_state = user_hlr_store.get(user_id, {})
+    current_time = datetime.now(timezone.utc).timestamp()
+    
+    urgency_scores = {
+        topic: calculate_urgency(state, current_time)
+        for topic, state in hlr_state.items()
+    }
+    
+    return {
+        "userId": user_id,
+        "urgency_scores": urgency_scores
+    }
+
+
