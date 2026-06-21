@@ -15,7 +15,7 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
  
 with open(os.path.join(BASE_DIR, "data", "topic_topic_edges_normalized.json"), encoding="utf-8-sig") as f:
     tt_edges = json.load(f)
- 
+
 def handle_get_candidates(topic, min_difficulty, max_difficulty, limit):
     from qdrant_client.models import Filter, FieldCondition, Range
     query_vector = model.encode(topic).tolist()
@@ -68,9 +68,9 @@ def handle_recommend(user_id, limit):
  
     # weak_topic should be different from urgent_topic
     weak_topic = min(
-      [t for t in mastery.keys() if t != urgent_topic],
-       key=lambda t: mastery[t]
-    ) if mastery else None
+    [t for t in mastery.keys() if t != urgent_topic],
+    key=lambda t: mastery[t]
+     ) if mastery and any(t != urgent_topic for t in mastery.keys()) else None
     # current_topic — highest combined score excluding above two
     remaining = [t for t in topic_scores if t != urgent_topic and t != weak_topic]
     current_topic = max(remaining, key=topic_scores.get) if remaining else None

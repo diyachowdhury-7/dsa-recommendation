@@ -41,6 +41,8 @@ def rank_candidates(
 
     for candidate in candidates:
         problem_topics = candidate.get("topics", [])
+        if not problem_topics:
+             continue
         similarity_score = candidate.get("score", 0.0)
 
         # Hard block — skip if prerequisites not met
@@ -79,15 +81,18 @@ def rank_candidates(
         )
 
         ranked.append({
-            "title_slug": candidate.get("title_slug"),
-            "title": candidate.get("title"),
-            "topics": problem_topics,
-            "bkt_score": round(bkt_score, 4),
-            "hlr_score": round(hlr_score, 4),
-            "similarity_score": round(sim_score, 4),
-            "variety_score": round(variety_score, 4),
-            "final_score": round(final_score, 4)
-        })
+           "title_slug": candidate.get("title_slug"),
+           "title": candidate.get("title"),
+           "description": candidate.get("description"),
+           "topics": problem_topics,
+           "difficulty_score": candidate.get("difficulty_score"),
+           "category": candidate.get("category", "general"),
+           "bkt_score": round(bkt_score, 4),
+           "hlr_score": round(hlr_score, 4),
+           "similarity_score": round(sim_score, 4),
+           "variety_score": round(variety_score, 4),
+           "final_score": round(final_score, 4)
+})
 
     # Sort by final score descending
     ranked.sort(key=lambda x: x["final_score"], reverse=True)

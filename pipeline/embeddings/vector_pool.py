@@ -6,7 +6,7 @@ from qdrant_client.models import PointStruct, VectorParams, Distance, Filter, Fi
 
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+REPO_ROOT = BASE_DIR
 with open(os.path.join(BASE_DIR, "data", "problem_nodes_normalized.json")) as f:
     problem_nodes = json.load(f)
 with open(os.path.join(BASE_DIR, "data", "problem_topic_edges_normalized.json")) as f:
@@ -54,7 +54,7 @@ embeddings = model.encode(texts, batch_size=64, show_progress_bar=True)
 for i, problem in enumerate(problems):
     problem["embedding"] = embeddings[i].tolist()
 
-client = QdrantClient(path="./qdrant_storage_v2")
+client = QdrantClient(path=os.path.join(REPO_ROOT, "qdrant_storage_v2"))
 
 existing = [c.name for c in client.get_collections().collections]
 if "problems_v2" in existing:

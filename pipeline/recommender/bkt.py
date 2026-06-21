@@ -9,10 +9,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 with open(os.path.join(BASE_DIR, "data", "problem_topic_edges_normalized.json")) as f:
     pt_edges = json.load(f)
 problem_to_topics = defaultdict(list)
+
 for edge in pt_edges:
     problem_to_topics[edge["source"]].append(edge["target"])
-
-print(f"Loaded topic mappings for {len(problem_to_topics)} problems")
 
 BKT_PARAMS = {
     "P_T": 0.2,   # probability of learning after one attempt
@@ -136,8 +135,10 @@ def update_bkt(current_p_l, observed):
     p_l_given_obs = observed * p_l_correct + (1 - observed) * p_l_wrong
 
     # Account for learning from this attempt
-    new_p_l = p_l_given_obs + (1 - p_l_given_obs) * P_T
-
+    if observed >= 0.5:
+     new_p_l = p_l_given_obs + (1 - p_l_given_obs) * P_T
+    else:
+     new_p_l = p_l_given_obs 
     return round(min(1.0, max(0.0, new_p_l)), 4)
 
 def process_submission(submission, user_mastery):

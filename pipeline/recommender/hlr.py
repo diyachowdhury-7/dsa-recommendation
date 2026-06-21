@@ -18,10 +18,12 @@ MAX_HALF_LIFE = 180.0
 MASTERY_THRESHOLD = 0.75
 RECALL_THRESHOLD = 0.5
 
+
 def seed_half_life_from_cf(cf_submissions, problem_to_topics):
     """
     Calculate initial half life per topic from CF history.
     Called once when user connects their CF account.
+    TODO: wire to /seed_hlr/{user_id} endpoint once CF API is available from backend.
     """
     topic_stats = defaultdict(lambda: {"solved": 0, "attempted": 0, "last_seen": None})
 
@@ -180,5 +182,4 @@ def process_hlr(submission, user_hlr_state):
         })
 
     return updated_state, results
-
 
