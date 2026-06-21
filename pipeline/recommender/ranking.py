@@ -1,8 +1,6 @@
 import json
-from collections import defaultdict
 from datetime import datetime, timezone
-from pipeline.recommender.bkt import process_submission as bkt_process, update_bkt, calculate_observed
-from pipeline.recommender.hlr import calculate_urgency, process_hlr
+from pipeline.recommender.hlr import calculate_urgency
 
 WEIGHTS = {
     "bkt_mastery":    0.35,  # how well user knows this topic
@@ -22,20 +20,9 @@ def calculate_variety_score(problem_topics, recent_topics, window=10):
     return round(max(0.0, variety_score), 4)
 
 def prerequisite_check(problem_topics, user_bkt_mastery, topic_topic_edges, threshold=0.75):
-    
-    # Build prerequisite lookup from CO_OCCURS_WITH edges with high jaccard
-    # High jaccard means topics strongly co-occur = likely prerequisite relationship
-    prereqs = defaultdict(list)
-    for edge in topic_topic_edges:
-        if edge.get("jaccard", 0) > 0.3:  # strong co-occurrence
-            prereqs[edge["target"]].append(edge["source"])
-
-    for topic in problem_topics:
-        for prereq in prereqs.get(topic, []):
-            prereq_mastery = user_bkt_mastery.get(prereq, 0.15)
-            if prereq_mastery < threshold:
-                return False  # prerequisite not met
-
+    # TopicPrerequisite table exists in PostgreSQL with proper prerequisite edges
+    # Hard block disabled until backend provides DB connection
+    # TODO: query TopicPrerequisite table once PostgreSQL connection is available
     return True
 
 def rank_candidates(
