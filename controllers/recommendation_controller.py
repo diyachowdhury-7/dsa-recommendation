@@ -83,7 +83,7 @@ def handle_recommend(user_id, limit):
         key=lambda t: mastery[t]
     ) if mastery and any(t != urgent_topic for t in mastery.keys()) else None
 
-    current_topic = get_last_attempted_topic(user_id, BACKEND_URL)
+    current_topic = get_last_attempted_topic(user_id, None)
     if current_topic not in topic_scores or current_topic == urgent_topic or current_topic == weak_topic:
         current_topic = None
     if not current_topic:
