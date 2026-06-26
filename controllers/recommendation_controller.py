@@ -8,7 +8,6 @@ from pipeline.recommender.hlr import calculate_urgency
 from pipeline.recommender.ranking import rank_candidates
 from database.postgres.db import get_user_mastery, get_user_hlr
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:3001")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Load once at startup
@@ -19,6 +18,7 @@ with open(os.path.join(BASE_DIR, "data", "topic_topic_edges_normalized.json"), e
     tt_edges = json.load(f)
 
 def get_last_attempted_topic(user_id, backend_url):
+    backend_url = os.environ.get("BACKEND_URL", "http://localhost:3001")
     try:
         response = requests.get(f"{backend_url}/user/{user_id}/last_attempted", timeout=2)
         data = response.json()
@@ -143,5 +143,6 @@ def handle_recommend(user_id, limit):
             "current_topic": current_topic
         },
         "recommended": ranked[0] if ranked else None,
-        "all_candidates_ranked": ranked
+        "all_candidates_ranked": ranked[:limit]
+
     }
